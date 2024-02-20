@@ -12,10 +12,12 @@ from model.Encoder import Encoder
 from model.Decoder import Decoder
 from preprocessing.build_vocab import build_vocab
 
-
 from utilities.vis_rendering import VegaZero2VegaLite
 from preprocessing.process_dataset import ProcessData4Training
 from vega import VegaLite
+
+from IPython.display import display, HTML, JSON
+import json
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="./GoogleCloud_Key.json" ## the key file of GoogleCloud API
@@ -164,6 +166,7 @@ class Sevi(object):
 
 
     def speech2text(self, AUDIO_FILE = None):
+        text = ""  # text 변수를 함수 시작 부분에서 초기화
         r = sr.Recognizer()
         # Reading Microphone as source
         # listening the speech and store in audio_text variable
@@ -201,7 +204,8 @@ class Sevi(object):
             Speech2VIS by the AUDIO_FILE
         '''
         nl = self.speech2text(AUDIO_FILE)
-        return self.nl2vis(nl)[0]
+        ##return self.nl2vis(nl)[0]
+        return self.nl2vis(nl)
 
     def nl2vis(self, nl_question, chart_template=None, show_progress=None, visualization_aware_translation=True):
         # process and the nl_question and the chart template as input.
@@ -226,6 +230,7 @@ class Sevi(object):
                 pred_query = postprocessing(pred_query, pred_query, False, input_src)
 
             pred_query = ' '.join(pred_query.replace('"', "'").split())
+            print('pred_query'+pred_query)
 
             if show_progress:
                 print('[NL Question]:', nl_question)
@@ -233,9 +238,19 @@ class Sevi(object):
                 print('[Predicted VIS Query]:', pred_query)
 
             # print('[The Predicted VIS Result]:')
-            return VegaLite(query2vl.to_VegaLite(pred_query, self.data)), query2vl.to_VegaLite(pred_query, self.data)
-            # print('\n')
+            ##return VegaLite(query2vl.to_VegaLite(pred_query, self.data)), query2vl.to_VegaLite(pred_query, self.data)
+            # VegaLite에서 생성된 JSON 스펙을 변수에 저장
+            vega_lite_spec_json = query2vl.to_VegaLite(pred_query, self.data)
 
+            # JSON 스펙에 $schema와 description 필드 추가
+            vega_lite_spec_json["$schema"] = "https://vega.github.io/schema/vega-lite/v4.json"
+            vega_lite_spec_json["description"] = "각 포지션별 개수를 보여주는 막대 차트"  # 예시 설명
+
+            # 동적으로 업데이트된 스펙을 사용하여 차트 렌더링
+            return display({
+                "application/vnd.vegalite.v5+json": vega_lite_spec_json
+            }, raw=True)
+        
         else:
             # print("\nGenerate the visualization by greedy decoding:\n")
 
@@ -255,9 +270,22 @@ class Sevi(object):
             print('[Chart Template]:', chart_template)
             print('[Predicted VIS Query]:', pred_query)
 
-            # print('[The Predicted VIS Result]:')
-            return VegaLite(query2vl.to_VegaLite(pred_query, self.data)), query2vl.to_VegaLite(pred_query, self.data)
+            print("Visualization Query: " + pred_query)  # Add this line to print the generated query
 
+            print('[The Predicted VIS Result]:')
+            # VegaLite 객체를 생성하여 바로 반환
+            ##return VegaLite(query2vl.to_VegaLite(pred_query, self.data)), query2vl.to_VegaLite(pred_query, self.data)
+            # VegaLite에서 생성된 JSON 스펙을 변수에 저장
+            vega_lite_spec_json = query2vl.to_VegaLite(pred_query, self.data)
+
+            # JSON 스펙에 $schema와 description 필드 추가
+            vega_lite_spec_json["$schema"] = "https://vega.github.io/schema/vega-lite/v4.json"
+            vega_lite_spec_json["description"] = "각 포지션별 개수를 보여주는 막대 차트"  # 예시 설명
+
+            # 동적으로 업데이트된 스펙을 사용하여 차트 렌더링
+            return display({
+                "application/vnd.vegalite.v5+json": vega_lite_spec_json
+            }, raw=True)
 
     def process_input(self, nl_question, chart_template):
 
