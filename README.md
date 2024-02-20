@@ -2,18 +2,19 @@
 
 <img src="./img/sevi.jpg" width="600">
 
-Sevi is an end-to-end data visualization system that acts as a virtual assistant to allow anyone to create visualizations through either natural language or speech.
+Sevi is an end-to-end data visualization system that acts as a virtual assistant to allow anyone to create visualizations through either natural language or speech. This repository is updated based on the original repo (https://github.com/Thanksyy/Sevi?tab=readme-ov-file)
 
 
-# Environment Setup
+# Environment Setup (Updated Feb20.2024)
 
-* `Python3.6+`
-* `PyTorch 1.7` 
-* `torchtext 0.8`
-* `ipyvega`
+* `Python3.6+` (works on 3.9.1)
+* `ipyvega` (via Vega)
+* `PyTorch 1.7` (no longer supportive, works on 1.9.0)
+* `torchtext 0.8` (no longer supportive, works on 0.10.0)
+
 
 Install Python dependency via `pip install -r requirements.txt` when the environment of Python and Pytorch is setup.
-
+* ipyvega: https://github.com/vega/ipyvega
 
 # How to use?
 
