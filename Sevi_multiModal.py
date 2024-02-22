@@ -19,6 +19,12 @@ from vega import VegaLite
 from IPython.display import display, HTML, JSON
 import json
 
+#hand gesture
+import cv2
+import mediapipe as mp
+import numpy as np
+import time
+
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="./GoogleCloud_Key.json" ## the key file of GoogleCloud API
 
@@ -34,6 +40,11 @@ class Sevi_multiModal(object):
         self.db_tables_columns = None
         self.db_tables_columns_types = None
         self.trained_model = trained_model
+        #hand gesture
+        self.hands = mp.solutions.hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5)
+        self.mp_drawing = mp.solutions.drawing_utils
+        self.mp_drawing_styles = mp.solutions.drawing_styles
+
 
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -360,6 +371,51 @@ class Sevi_multiModal(object):
         token_types = get_token_types(input_src)
 
         return input_src, token_types
+    
+    #guesture
+    def recognize_gesture(self, hand_landmarks):
+        thumb_tip = hand_landmarks.landmark[mp.solutions.hands.HandLandmark.THUMB_TIP]
+        index_tip = hand_landmarks.landmark[mp.solutions.hands.HandLandmark.INDEX_FINGER_TIP]
+        thumb_up = thumb_tip.y < hand_landmarks.landmark[mp.solutions.hands.HandLandmark.THUMB_IP].y
+        index_up = index_tip.y < hand_landmarks.landmark[mp.solutions.hands.HandLandmark.INDEX_FINGER_PIP].y
+        if thumb_up and index_up:
+            return "Peace Sign"
+        elif thumb_up:
+            return "Thumb Up"
+        else:
+            return "Unknown"
+
+    def detect_gesture(self):
+        cap = cv2.VideoCapture(0)
+        while cap.isOpened():
+            success, image = cap.read()
+            if not success:
+                print("웹캠에서 이미지를 읽어오는데 실패했습니다.")
+                break
+
+            image = cv2.cvtColor(cv2.flip(image, 1), cv2.COLOR_BGR2RGB)
+            image.flags.writeable = False
+            results = self.hands.process(image)
+            image.flags.writeable = True
+            image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+
+            if results.multi_hand_landmarks:
+                for hand_landmarks in results.multi_hand_landmarks:
+                    self.mp_drawing.draw_landmarks(
+                        image,
+                        hand_landmarks,
+                        mp.solutions.hands.HAND_CONNECTIONS,
+                        self.mp_drawing_styles.get_default_hand_landmarks_style(),
+                        self.mp_drawing_styles.get_default_hand_connections_style())
+                    gesture = self.recognize_gesture(hand_landmarks)
+                    cv2.putText(image, gesture, (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
+
+            cv2.imshow('MediaPipe Hands', image)
+            if cv2.waitKey(5) & 0xFF == ord('q'):
+                break
+
+        cap.release()
+        cv2.destroyAllWindows()
 
 
 if __name__ == '__main__':
