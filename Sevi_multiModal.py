@@ -44,6 +44,8 @@ class Sevi_multiModal(object):
         self.hands = mp.solutions.hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5)
         self.mp_drawing = mp.solutions.drawing_utils
         self.mp_drawing_styles = mp.solutions.drawing_styles
+        # recognized_gesture 속성 초기화
+        self.recognized_gesture = None
 
 
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -257,6 +259,12 @@ class Sevi_multiModal(object):
             vega_lite_spec_json["$schema"] = "https://vega.github.io/schema/vega-lite/v4.json"
             vega_lite_spec_json["description"] = "각 포지션별 개수를 보여주는 막대 차트"  # 예시 설명
 
+            # 손 제스처에 따라 mark를 변경
+            if self.recognized_gesture == "Peace Sign":
+                vega_lite_spec_json["spec"]["mark"] = "line"
+            elif self.recognized_gesture == "Thumb Up":
+                vega_lite_spec_json["spec"]["mark"] = "bar"
+
             # 동적으로 업데이트된 스펙을 사용하여 차트 렌더링
             return display({
                 "application/vnd.vegalite.v5+json": vega_lite_spec_json
@@ -292,6 +300,12 @@ class Sevi_multiModal(object):
             # JSON 스펙에 $schema와 description 필드 추가
             vega_lite_spec_json["$schema"] = "https://vega.github.io/schema/vega-lite/v4.json"
             vega_lite_spec_json["description"] = "각 포지션별 개수를 보여주는 막대 차트"  # 예시 설명
+
+            # 손 제스처에 따라 mark를 변경
+            if self.recognized_gesture == "Peace Sign":
+                vega_lite_spec_json["spec"]["mark"] = "line"
+            elif self.recognized_gesture == "Thumb Up":
+                vega_lite_spec_json["spec"]["mark"] = "bar"
 
             # 동적으로 업데이트된 스펙을 사용하여 차트 렌더링
             return display({
@@ -379,10 +393,13 @@ class Sevi_multiModal(object):
         thumb_up = thumb_tip.y < hand_landmarks.landmark[mp.solutions.hands.HandLandmark.THUMB_IP].y
         index_up = index_tip.y < hand_landmarks.landmark[mp.solutions.hands.HandLandmark.INDEX_FINGER_PIP].y
         if thumb_up and index_up:
+            self.recognized_gesture = "Peace Sign"
             return "Peace Sign"
         elif thumb_up:
+            self.recognized_gesture = "Thumb Up"
             return "Thumb Up"
         else:
+            self.recognized_gesture = "Unknown"
             return "Unknown"
 
     def detect_gesture(self):
